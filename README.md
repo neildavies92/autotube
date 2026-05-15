@@ -60,6 +60,7 @@ The runnable application scaffold has not been added yet. Until then:
 - Use Conventional Commits.
 - Rebase feature branches during development and squash merge PRs into `main`.
 - Keep Notion updated when architecture, requirements, workflow, or durable decisions change.
+- Use the pull request template in `.github/` for every change.
 
 ## Documentation
 
