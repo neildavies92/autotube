@@ -1,0 +1,4 @@
+interface:
+  display_name: "AutoTube Doc Sync"
+  short_description: "Keep AutoTube Notion docs aligned."
+  default_prompt: "Use $autotube-doc-sync to update the AutoTube documentation for these changes."
