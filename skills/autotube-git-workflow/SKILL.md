@@ -43,6 +43,26 @@ Use trunk-based development with `main` as the protected integration branch.
 5. Open a PR with the required title and short description.
 6. Use squash merge after review and passing checks.
 
+## After A PR Is Merged
+
+Clean up locally after GitHub shows the PR as merged:
+
+```bash
+git fetch --prune origin
+git switch main
+git pull --rebase origin main
+git branch -d <merged-branch>
+```
+
+What each command is doing:
+
+- `git fetch --prune origin` updates local knowledge of GitHub and removes stale `origin/*` remote-tracking refs for branches that no longer exist remotely.
+- `git switch main` returns to the protected integration branch.
+- `git pull --rebase origin main` updates local `main` from GitHub while preserving a linear local history if local commits exist.
+- `git branch -d <merged-branch>` deletes the local feature branch only when Git considers it safely merged.
+
+Use `git branch -D` only when the user explicitly confirms that an unmerged local branch should be discarded.
+
 ## Examples
 
 - Branch: `feat/AT-13-scaffold-go-api-web`
