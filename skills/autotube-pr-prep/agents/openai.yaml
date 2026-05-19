@@ -1,0 +1,4 @@
+interface:
+  display_name: "AutoTube PR Prep"
+  short_description: "Prepare AutoTube pull requests cleanly."
+  default_prompt: "Use $autotube-pr-prep to prepare this AutoTube branch for a pull request."

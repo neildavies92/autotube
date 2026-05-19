@@ -1,0 +1,4 @@
+interface:
+  display_name: "AutoTube README Maintenance"
+  short_description: "Keep the AutoTube README useful and current."
+  default_prompt: "Use $autotube-readme-maintenance to update the AutoTube README for these changes."

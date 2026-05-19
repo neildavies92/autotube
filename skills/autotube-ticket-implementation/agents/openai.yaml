@@ -1,0 +1,4 @@
+interface:
+  display_name: "AutoTube Ticket Implementation"
+  short_description: "Implement AutoTube work from Jira tickets."
+  default_prompt: "Use $autotube-ticket-implementation to start this AutoTube Jira ticket correctly."

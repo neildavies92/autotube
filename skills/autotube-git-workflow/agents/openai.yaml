@@ -1,0 +1,4 @@
+interface:
+  display_name: "AutoTube Git Workflow"
+  short_description: "Apply the AutoTube branch, PR, and merge rules."
+  default_prompt: "Use the AutoTube Git workflow for this repository task."
