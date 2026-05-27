@@ -20,7 +20,7 @@ The aim is to build a data-driven content pipeline that can support steady chann
 
 AutoTube is in **Milestone 1: Project foundation plus basic niche management**.
 
-The repository is being prepared before the application scaffold is added. Current foundation work includes project governance, documentation, Git workflow, and shared Codex skills that keep delivery consistent across machines.
+The initial Go API and React/Vite workspace scaffold is in progress under AT-13. Current foundation work includes project governance, documentation, Git workflow, shared Codex skills, and the first runnable backend/frontend project structure.
 
 ## Planned Stack
 
@@ -33,7 +33,7 @@ The repository is being prepared before the application scaffold is added. Curre
 - API contract: REST + OpenAPI
 - Durable background jobs: deferred until the first real async workflows are needed
 
-## Planned Repository Layout
+## Repository Layout
 
 ```text
 apps/api             Go API and backend foundations
@@ -46,12 +46,41 @@ skills               Project-owned Codex skills
 
 ## Getting Started
 
-The runnable application scaffold has not been added yet. Until then:
+Prerequisites:
 
-1. Review the project documentation in Notion for the current product and architecture decisions.
-2. Use Jira as the execution backlog.
-3. Follow the repository Git workflow before making changes.
-4. Use the project-owned skills in [`skills/`](skills/) when working on AutoTube from another machine.
+- Go 1.24
+- Node 22, as declared in `.nvmrc`
+- npm
+
+Install frontend dependencies:
+
+```bash
+npm install
+```
+
+Run the Go API:
+
+```bash
+npm run dev:api
+```
+
+Run the React/Vite dashboard:
+
+```bash
+npm run dev:web
+```
+
+Run backend tests:
+
+```bash
+npm run test:api
+```
+
+Build the frontend:
+
+```bash
+npm run build:web
+```
 
 ## Working Conventions
 

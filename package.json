@@ -1,0 +1,21 @@
+{
+  "name": "autotube",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first platform for planning and producing original YouTube explainer videos from niche and trend data.",
+  "workspaces": [
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:api": "go run ./apps/api/cmd/api",
+    "test:api": "go test ./...",
+    "dev:web": "npm run dev --workspace @autotube/web",
+    "build:web": "npm run build --workspace @autotube/web",
+    "typecheck:web": "npm run typecheck --workspace @autotube/web",
+    "build": "npm run build:web",
+    "test": "go test ./..."
+  }
+}
