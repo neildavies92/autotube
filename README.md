@@ -51,35 +51,41 @@ Prerequisites:
 - Go 1.24
 - Node 22, as declared in `.nvmrc`
 - npm
+- Make
 
 Install frontend dependencies:
 
 ```bash
-npm install
+make setup
 ```
 
 Run the Go API:
 
 ```bash
-npm run dev:api
+make dev-api
 ```
 
 Run the React/Vite dashboard:
 
 ```bash
-npm run dev:web
+make dev-web
 ```
 
-Run backend tests:
+Run the local verification suite:
 
 ```bash
-npm run test:api
+make check
 ```
 
-Build the frontend:
+The Makefile is a thin wrapper around the root npm scripts and Go commands, so the underlying commands remain visible in `package.json` while local development gets one consistent entry point.
+
+Useful individual commands:
 
 ```bash
-npm run build:web
+make test-api
+make typecheck-web
+make build-web
+make clean
 ```
 
 ## Working Conventions
