@@ -15,6 +15,7 @@
     "dev:web": "npm run dev --workspace @autotube/web",
     "build:web": "npm run build --workspace @autotube/web",
     "typecheck:web": "npm run typecheck --workspace @autotube/web",
+    "sqlc:generate": "sqlc generate",
     "build": "npm run build:web",
     "test": "go test ./..."
   }

@@ -52,11 +52,19 @@ Prerequisites:
 - Node 22, as declared in `.nvmrc`
 - npm
 - Make
+- Docker with Docker Compose
+- sqlc, for regenerating Go query code
 
 Install frontend dependencies:
 
 ```bash
 make setup
+```
+
+Create a local environment file:
+
+```bash
+cp .env.example .env
 ```
 
 Run the Go API:
@@ -77,6 +85,19 @@ Run the local verification suite:
 make check
 ```
 
+Start PostgreSQL and apply the initial schema:
+
+```bash
+make db-up
+make db-migrate
+```
+
+Recreate the database from scratch:
+
+```bash
+make db-reset
+```
+
 The Makefile is a thin wrapper around the root npm scripts and Go commands, so the underlying commands remain visible in `package.json` while local development gets one consistent entry point.
 
 Useful individual commands:
@@ -85,6 +106,7 @@ Useful individual commands:
 make test-api
 make typecheck-web
 make build-web
+make sqlc-generate
 make clean
 ```
 
