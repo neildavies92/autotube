@@ -56,6 +56,7 @@ Prerequisites:
 - Make
 - Docker with Docker Compose
 - sqlc, for regenerating Go query code
+- GitHub CLI, authenticated for PR-aware cleanup commands
 
 Install frontend dependencies:
 
@@ -109,8 +110,11 @@ make test-api
 make typecheck-web
 make build-web
 make sqlc-generate
+make post-merge-cleanup BRANCH=<merged-branch>
 make clean
 ```
+
+After merging a pull request, run `make post-merge-cleanup BRANCH=<merged-branch>` to fetch and prune remote refs, switch back to `main`, update it from GitHub, and delete the merged local branch. The cleanup helper uses a normal safe branch delete first, then only force-deletes a squash-merged branch when GitHub confirms the PR was merged into `main`.
 
 ## Working Conventions
 
