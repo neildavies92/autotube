@@ -14,6 +14,7 @@ Use trunk-based development with `main` as the protected integration branch.
 - Prefer branch names in the form `feat/JIRAKEY-short-kebab-description`.
 - Use another conventional prefix when it fits better, such as `fix/`, `docs/`, or `chore/`.
 - Keep commits in Conventional Commit style, without repeating the Jira key when it is already in the branch and PR title.
+- When a PR contains multiple implementation slices, use multiple focused Conventional Commits so each slice can be reviewed, traced, and reverted independently.
 - Keep feature branches current by rebasing onto `main`; do not merge `main` into a feature branch.
 - Merge pull requests into `main` with squash merge only.
 - Delete the feature branch after merge.
@@ -38,10 +39,13 @@ Use trunk-based development with `main` as the protected integration branch.
 
 1. Confirm the current branch before editing files.
 2. If on `main`, create the appropriate feature branch first.
-3. Make focused commits using Conventional Commit messages.
-4. Rebase the branch onto the latest `main` before opening or finalizing the PR when needed.
-5. Open a PR with the required title and short description.
-6. Use squash merge after review and passing checks.
+3. Plan commit slices before editing when the ticket naturally splits into distinct concerns.
+4. Make focused commits using Conventional Commit messages.
+5. Prefer one commit per coherent implementation slice, such as config, persistence, UI, tests, docs, or cleanup.
+6. Avoid mixing unrelated behavior, generated files, documentation, and cleanup in the same commit unless they are inseparable from that slice.
+7. Rebase the branch onto the latest `main` before opening or finalizing the PR when needed.
+8. Open a PR with the required title and short description.
+9. Use squash merge after review and passing checks.
 
 ## After A PR Is Merged
 
@@ -68,3 +72,8 @@ Use `git branch -D` only when the user explicitly confirms that an unmerged loca
 - Branch: `feat/AT-13-scaffold-go-api-web`
 - Commit: `feat: scaffold Go API health endpoint`
 - PR title: `AT-13: Scaffold Go API and web foundation`
+- Multi-slice PR commits:
+  - `feat: add API configuration loading`
+  - `feat: define provider integration interfaces`
+  - `feat: add worker-ready workflow boundaries`
+  - `docs: document API foundation boundaries`
