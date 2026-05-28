@@ -12,10 +12,10 @@ DB_COMPOSE := docker compose --env-file .env -f infra/compose.yaml
 
 .DEFAULT_GOAL := help
 
-.PHONY: help setup dev-api dev-web test test-api typecheck-web build build-web check db-up db-down db-migrate db-rollback db-reset sqlc-generate clean
+.PHONY: help setup dev-api dev-web test test-api typecheck-web build build-web check db-up db-down db-migrate db-rollback db-reset sqlc-generate post-merge-cleanup clean
 
 help: ## Show available local development commands.
-	@awk 'BEGIN {FS = ":.*## "; printf "AutoTube local development commands:\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-16s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*## "; printf "AutoTube local development commands:\n\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-24s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 setup: ## Install project dependencies.
 	npm install
@@ -64,6 +64,9 @@ db-reset: ## Recreate local PostgreSQL from scratch and apply migrations.
 
 sqlc-generate: ## Regenerate type-safe Go query code from SQL.
 	sqlc generate
+
+post-merge-cleanup: ## Clean up locally after a PR merge. Usage: make post-merge-cleanup BRANCH=<merged-branch>
+	sh scripts/git/post-merge-cleanup.sh "$(BRANCH)"
 
 clean: ## Remove local build and coverage output.
 	rm -rf apps/web/dist apps/web/coverage coverage.out
