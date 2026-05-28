@@ -1,26 +1,28 @@
 # AutoTube
 
-AutoTube is a local-first, compliance-first application for planning and producing original YouTube explainer videos from niche and trend data.
+AutoTube is a local-first, compliance-first application for researching niches and producing original evergreen YouTube explainer videos for a single MVP channel.
 
 The project is being built as a learning vehicle for full-stack engineering, data analysis, and agentic systems, with a deliberate emphasis on understanding Go and its ecosystem deeply rather than hiding the foundations behind heavy frameworks.
 
 ## What It Will Do
 
-- Research user-defined niches and identify promising topic opportunities.
-- Produce weekly plans capped at 2-3 publishable videos.
+- Research user-defined niches and identify durable evergreen topic opportunities.
+- Produce weekly plans capped at 2-3 publishable videos for the MVP channel.
 - Generate original draft packages, assets, previews, and metadata.
 - Keep provenance, quality checks, and human approval in the workflow.
 - Upload approved videos privately before any manual public release.
 
 ## Why It Exists
 
-The aim is to build a data-driven content pipeline that can support steady channel growth while remaining original, reviewable, and compliant by design.
+The aim is to build a data-driven evergreen content pipeline that can support steady channel growth while remaining original, reviewable, and compliant by design.
 
 ## Current Status
 
 AutoTube is in **Milestone 1: Project foundation plus basic niche management**.
 
-The initial Go API and React/Vite workspace scaffold is in progress under AT-13. Current foundation work includes project governance, documentation, Git workflow, shared Codex skills, and the first runnable backend/frontend project structure.
+Current foundation work includes project governance, documentation, Git workflow, shared Codex skills, the first runnable backend/frontend project structure, and a local PostgreSQL persistence foundation.
+
+V1 is intentionally single-channel. Multi-channel portfolio management is a future capability, but implementation should avoid hard-coding choices that would block it later.
 
 ## Planned Stack
 
