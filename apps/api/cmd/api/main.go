@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/neildavies92/autotube/apps/api/internal/config"
 	"github.com/neildavies92/autotube/apps/api/internal/httpserver"
 )
 
@@ -18,8 +19,14 @@ func main() {
 		Level: slog.LevelInfo,
 	}))
 
+	cfg, err := config.Load(config.Options{})
+	if err != nil {
+		logger.Error("configuration failed", "error", err)
+		os.Exit(1)
+	}
+
 	server := &http.Server{
-		Addr:              ":8080",
+		Addr:              cfg.Server.Addr,
 		Handler:           httpserver.New(logger),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
