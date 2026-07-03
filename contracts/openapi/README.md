@@ -1,5 +1,11 @@
 # OpenAPI Contract
 
-OpenAPI specifications for the REST contract between the Go API and React dashboard will live here.
+OpenAPI specifications for the REST contract between the Go API and React dashboard live here.
 
-AT-13 creates the landing zone only. The first concrete API contract will be added when backend endpoints and frontend integration begin.
+The current contract starts with the health/status endpoint used by the local dashboard:
+
+```bash
+GET /health
+```
+
+See `openapi.yaml` for the concrete contract.

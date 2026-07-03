@@ -1,0 +1,43 @@
+openapi: 3.1.0
+info:
+  title: AutoTube API
+  version: 0.1.0
+  summary: Local-first API contract for the AutoTube dashboard.
+servers:
+  - url: http://127.0.0.1:8080
+    description: Local Go API server
+paths:
+  /health:
+    get:
+      summary: Read API health status
+      operationId: getHealth
+      responses:
+        "200":
+          description: API is reachable and ready for local dashboard requests.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - service
+        - status
+        - message
+        - checkedAt
+      properties:
+        service:
+          type: string
+          example: autotube-api
+        status:
+          type: string
+          enum:
+            - ok
+        message:
+          type: string
+          example: AutoTube API is ready for local dashboard requests.
+        checkedAt:
+          type: string
+          format: date-time
