@@ -20,7 +20,7 @@ The aim is to build a data-driven evergreen content pipeline that can support st
 
 AutoTube is in **Milestone 1: Project foundation plus basic niche management**.
 
-Current foundation work includes project governance, documentation, Git workflow, shared Codex skills, the first runnable backend/frontend project structure, and a local PostgreSQL persistence foundation.
+Current foundation work includes project governance, documentation, Git workflow, shared Codex skills, the first runnable backend/frontend project structure, a local PostgreSQL persistence foundation, and the base dashboard health/status integration.
 
 V1 is intentionally single-channel. Multi-channel portfolio management is a future capability, but implementation should avoid hard-coding choices that would block it later.
 
@@ -76,11 +76,13 @@ Run the Go API:
 make dev-api
 ```
 
-Run the React/Vite dashboard:
+Run the React/Vite dashboard in another terminal:
 
 ```bash
 make dev-web
 ```
+
+The dashboard proxies `/api/*` requests to the local API at `127.0.0.1:8080`, so keep the API running to see the live health/status state.
 
 Run the local verification suite:
 
