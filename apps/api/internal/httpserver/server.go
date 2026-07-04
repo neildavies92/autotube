@@ -13,6 +13,13 @@ type rootResponse struct {
 	Message string `json:"message"`
 }
 
+type healthResponse struct {
+	Service   string `json:"service"`
+	Status    string `json:"status"`
+	Message   string `json:"message"`
+	CheckedAt string `json:"checkedAt"`
+}
+
 func New(logger *slog.Logger) http.Handler {
 	if logger == nil {
 		logger = slog.Default()
@@ -20,6 +27,7 @@ func New(logger *slog.Logger) http.Handler {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", handleRoot)
+	mux.HandleFunc("GET /health", handleHealth)
 
 	return recoverer(logger, requestLogger(logger, mux))
 }
@@ -28,6 +36,15 @@ func handleRoot(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, rootResponse{
 		Service: "autotube-api",
 		Message: "AutoTube API scaffold is running.",
+	})
+}
+
+func handleHealth(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, healthResponse{
+		Service:   "autotube-api",
+		Status:    "ok",
+		Message:   "AutoTube API is ready for local dashboard requests.",
+		CheckedAt: time.Now().UTC().Format(time.RFC3339),
 	})
 }
 

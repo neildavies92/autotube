@@ -17,6 +17,8 @@ Configuration is loaded from environment variables in `internal/config`.
 
 External integrations start as interfaces in `internal/providers` for YouTube, trends, LLM, image, voice, rendering, and upload providers. Background work starts as contracts in `internal/workflow`; durable queue infrastructure remains deferred until a real asynchronous workflow needs it.
 
+The API exposes `GET /health` for the local dashboard health/status integration.
+
 Run from the repository root:
 
 ```bash
