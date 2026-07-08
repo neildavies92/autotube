@@ -12,6 +12,8 @@ import (
 
 	"github.com/neildavies92/autotube/apps/api/internal/config"
 	"github.com/neildavies92/autotube/apps/api/internal/httpserver"
+	"github.com/neildavies92/autotube/apps/api/internal/providers"
+	"github.com/neildavies92/autotube/apps/api/internal/youtube"
 )
 
 func main() {
@@ -25,9 +27,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	var youtubeProvider providers.YouTubeProvider
+	if cfg.Providers.YouTubeAPIKey != "" {
+		youtubeProvider = youtube.NewClient(cfg.Providers.YouTubeAPIKey, nil)
+		logger.Info("youtube provider configured")
+	} else {
+		logger.Warn("YOUTUBE_API_KEY not set — /research/youtube endpoint disabled")
+	}
+
 	server := &http.Server{
 		Addr:              cfg.Server.Addr,
-		Handler:           httpserver.New(logger),
+		Handler:           httpserver.New(logger, youtubeProvider),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,
