@@ -2,11 +2,57 @@ package httpserver
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"runtime/debug"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
+
+	"github.com/neildavies92/autotube/apps/api/internal/providers"
 )
+
+const researchCacheTTL = 4 * time.Hour
+
+// YouTube Data API v3 quota costs (units).
+const (
+	searchQuotaCost  = 100 // search.list
+	metricsQuotaCost = 1   // videos.list
+)
+
+type server struct {
+	logger        *slog.Logger
+	youtube       providers.YouTubeProvider
+	researchCache *researchCache
+}
+
+// New builds the HTTP handler. Pass a non-nil YouTubeProvider to enable the
+// /research/youtube endpoint; pass nil to omit it (e.g. no API key configured).
+func New(logger *slog.Logger, yt providers.YouTubeProvider) http.Handler {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
+	s := &server{
+		logger:        logger,
+		youtube:       yt,
+		researchCache: newResearchCache(),
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /{$}", handleRoot)
+	mux.HandleFunc("GET /health", handleHealth)
+
+	if yt != nil {
+		mux.HandleFunc("GET /research/youtube", s.handleYouTubeResearch)
+	}
+
+	return recoverer(logger, requestLogger(logger, mux))
+}
+
+// --- static handlers ---
 
 type rootResponse struct {
 	Service string `json:"service"`
@@ -18,18 +64,6 @@ type healthResponse struct {
 	Status    string `json:"status"`
 	Message   string `json:"message"`
 	CheckedAt string `json:"checkedAt"`
-}
-
-func New(logger *slog.Logger) http.Handler {
-	if logger == nil {
-		logger = slog.Default()
-	}
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /{$}", handleRoot)
-	mux.HandleFunc("GET /health", handleHealth)
-
-	return recoverer(logger, requestLogger(logger, mux))
 }
 
 func handleRoot(w http.ResponseWriter, _ *http.Request) {
@@ -47,6 +81,196 @@ func handleHealth(w http.ResponseWriter, _ *http.Request) {
 		CheckedAt: time.Now().UTC().Format(time.RFC3339),
 	})
 }
+
+// --- YouTube research handler ---
+
+type researchResponse struct {
+	Query     string          `json:"query"`
+	Region    string          `json:"region"`
+	Cached    bool            `json:"cached"`
+	FetchedAt string          `json:"fetchedAt"`
+	QuotaCost int             `json:"quotaCost"`
+	Videos    []researchVideo `json:"videos"`
+}
+
+type researchVideo struct {
+	VideoID      string `json:"videoId"`
+	Title        string `json:"title"`
+	Description  string `json:"description"`
+	ChannelID    string `json:"channelId"`
+	ChannelName  string `json:"channelName"`
+	PublishedAt  string `json:"publishedAt"`
+	ViewCount    int64  `json:"viewCount"`
+	LikeCount    int64  `json:"likeCount"`
+	CommentCount int64  `json:"commentCount"`
+	VideoURL     string `json:"videoUrl"`
+}
+
+func (s *server) handleYouTubeResearch(w http.ResponseWriter, r *http.Request) {
+	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	if query == "" {
+		writeError(w, http.StatusBadRequest, "q is required")
+		return
+	}
+
+	region := strings.ToUpper(strings.TrimSpace(r.URL.Query().Get("region")))
+	if region == "" {
+		region = "US"
+	}
+
+	maxResults := 25
+	if maxParam := r.URL.Query().Get("max"); maxParam != "" {
+		if n, err := strconv.Atoi(maxParam); err == nil && n > 0 && n <= 50 {
+			maxResults = n
+		}
+	}
+
+	cacheKey := fmt.Sprintf("%s|%s|%d", strings.ToLower(query), region, maxResults)
+
+	if entry, ok := s.researchCache.get(cacheKey); ok {
+		s.logger.Info("youtube research cache hit", "query", query, "region", region)
+		writeJSON(w, http.StatusOK, researchResponse{
+			Query:     query,
+			Region:    region,
+			Cached:    true,
+			FetchedAt: entry.fetchedAt.UTC().Format(time.RFC3339),
+			QuotaCost: 0,
+			Videos:    entry.videos,
+		})
+		return
+	}
+
+	locale := providers.Locale{Region: region}
+
+	searchResult, err := s.youtube.SearchVideos(r.Context(), providers.YouTubeSearchRequest{
+		Query:      query,
+		Locale:     locale,
+		MaxResults: maxResults,
+	})
+	if err != nil {
+		s.logger.Error("youtube search failed", "query", query, "error", err)
+		writeError(w, http.StatusBadGateway, "YouTube search failed")
+		return
+	}
+
+	videoIDs := make([]string, 0, len(searchResult.Videos))
+	for _, v := range searchResult.Videos {
+		videoIDs = append(videoIDs, v.ID)
+	}
+
+	quotaCost := searchQuotaCost
+	if len(videoIDs) > 0 {
+		quotaCost += metricsQuotaCost
+	}
+
+	metricsResult, err := s.youtube.GetVideoMetrics(r.Context(), providers.VideoMetricsRequest{VideoIDs: videoIDs})
+	if err != nil {
+		s.logger.Error("youtube metrics failed", "query", query, "error", err)
+		writeError(w, http.StatusBadGateway, "YouTube metrics failed")
+		return
+	}
+
+	metricsByID := make(map[string]providers.VideoMetrics, len(metricsResult.Metrics))
+	for _, m := range metricsResult.Metrics {
+		metricsByID[m.VideoID] = m
+	}
+
+	videos := make([]researchVideo, 0, len(searchResult.Videos))
+	for _, v := range searchResult.Videos {
+		m := metricsByID[v.ID]
+		videos = append(videos, researchVideo{
+			VideoID:      v.ID,
+			Title:        v.Title,
+			Description:  v.Description,
+			ChannelID:    v.ChannelID,
+			ChannelName:  v.ChannelName,
+			PublishedAt:  v.PublishedAt,
+			ViewCount:    m.ViewCount,
+			LikeCount:    m.LikeCount,
+			CommentCount: m.CommentCount,
+			VideoURL:     "https://www.youtube.com/watch?v=" + v.ID,
+		})
+	}
+
+	fetchedAt := time.Now()
+	s.researchCache.set(cacheKey, researchCacheEntry{videos: videos, fetchedAt: fetchedAt}, researchCacheTTL)
+
+	s.logger.Info("youtube research completed", "query", query, "region", region, "results", len(videos), "quota_cost", quotaCost)
+
+	writeJSON(w, http.StatusOK, researchResponse{
+		Query:     query,
+		Region:    region,
+		Cached:    false,
+		FetchedAt: fetchedAt.UTC().Format(time.RFC3339),
+		QuotaCost: quotaCost,
+		Videos:    videos,
+	})
+}
+
+// --- in-memory research cache ---
+
+type researchCacheEntry struct {
+	videos    []researchVideo
+	fetchedAt time.Time
+	expiresAt time.Time
+}
+
+// maxCacheEntries bounds the cache so distinct query/region/max combinations
+// cannot grow memory without limit. When the cap is reached on insert, expired
+// entries are swept first before the new entry is added.
+const maxCacheEntries = 1024
+
+type researchCache struct {
+	mu      sync.RWMutex
+	entries map[string]researchCacheEntry
+}
+
+func newResearchCache() *researchCache {
+	return &researchCache{entries: make(map[string]researchCacheEntry)}
+}
+
+func (c *researchCache) get(key string) (researchCacheEntry, bool) {
+	c.mu.RLock()
+	entry, ok := c.entries[key]
+	c.mu.RUnlock()
+
+	if !ok {
+		return researchCacheEntry{}, false
+	}
+	if time.Now().After(entry.expiresAt) {
+		// Reclaim the expired slot so it can't accumulate indefinitely.
+		// Re-check under the write lock in case another goroutine refreshed it.
+		c.mu.Lock()
+		if cur, still := c.entries[key]; still && time.Now().After(cur.expiresAt) {
+			delete(c.entries, key)
+		}
+		c.mu.Unlock()
+		return researchCacheEntry{}, false
+	}
+	return entry, true
+}
+
+func (c *researchCache) set(key string, entry researchCacheEntry, ttl time.Duration) {
+	now := time.Now()
+	entry.expiresAt = now.Add(ttl)
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Bound growth: if we're at capacity and this is a new key, drop expired
+	// entries to make room before inserting.
+	if _, exists := c.entries[key]; !exists && len(c.entries) >= maxCacheEntries {
+		for k, e := range c.entries {
+			if now.After(e.expiresAt) {
+				delete(c.entries, k)
+			}
+		}
+	}
+
+	c.entries[key] = entry
+}
+
+// --- middleware ---
 
 func requestLogger(logger *slog.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -86,4 +310,10 @@ func writeJSON(w http.ResponseWriter, status int, payload any) {
 	if err := json.NewEncoder(w).Encode(payload); err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
+}
+
+// writeError emits a JSON error body with a safe, client-facing message.
+// Underlying errors must be logged separately, never sent to the client.
+func writeError(w http.ResponseWriter, status int, message string) {
+	writeJSON(w, status, map[string]string{"error": message})
 }
