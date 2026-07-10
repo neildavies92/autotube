@@ -16,6 +16,12 @@ import (
 
 const researchCacheTTL = 4 * time.Hour
 
+// YouTube Data API v3 quota costs (units).
+const (
+	searchQuotaCost  = 100 // search.list
+	metricsQuotaCost = 1   // videos.list
+)
+
 type server struct {
 	logger        *slog.Logger
 	youtube       providers.YouTubeProvider
@@ -103,7 +109,7 @@ type researchVideo struct {
 func (s *server) handleYouTubeResearch(w http.ResponseWriter, r *http.Request) {
 	query := strings.TrimSpace(r.URL.Query().Get("q"))
 	if query == "" {
-		http.Error(w, `{"error":"q is required"}`, http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "q is required")
 		return
 	}
 
@@ -143,7 +149,7 @@ func (s *server) handleYouTubeResearch(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		s.logger.Error("youtube search failed", "query", query, "error", err)
-		http.Error(w, `{"error":"YouTube search failed: `+err.Error()+`"}`, http.StatusBadGateway)
+		writeError(w, http.StatusBadGateway, "YouTube search failed")
 		return
 	}
 
@@ -152,10 +158,15 @@ func (s *server) handleYouTubeResearch(w http.ResponseWriter, r *http.Request) {
 		videoIDs = append(videoIDs, v.ID)
 	}
 
+	quotaCost := searchQuotaCost
+	if len(videoIDs) > 0 {
+		quotaCost += metricsQuotaCost
+	}
+
 	metricsResult, err := s.youtube.GetVideoMetrics(r.Context(), providers.VideoMetricsRequest{VideoIDs: videoIDs})
 	if err != nil {
 		s.logger.Error("youtube metrics failed", "query", query, "error", err)
-		http.Error(w, `{"error":"YouTube metrics failed: `+err.Error()+`"}`, http.StatusBadGateway)
+		writeError(w, http.StatusBadGateway, "YouTube metrics failed")
 		return
 	}
 
@@ -184,14 +195,14 @@ func (s *server) handleYouTubeResearch(w http.ResponseWriter, r *http.Request) {
 	fetchedAt := time.Now()
 	s.researchCache.set(cacheKey, researchCacheEntry{videos: videos, fetchedAt: fetchedAt}, researchCacheTTL)
 
-	s.logger.Info("youtube research completed", "query", query, "region", region, "results", len(videos), "quota_cost", 101)
+	s.logger.Info("youtube research completed", "query", query, "region", region, "results", len(videos), "quota_cost", quotaCost)
 
 	writeJSON(w, http.StatusOK, researchResponse{
 		Query:     query,
 		Region:    region,
 		Cached:    false,
 		FetchedAt: fetchedAt.UTC().Format(time.RFC3339),
-		QuotaCost: 101,
+		QuotaCost: quotaCost,
 		Videos:    videos,
 	})
 }
@@ -203,6 +214,11 @@ type researchCacheEntry struct {
 	fetchedAt time.Time
 	expiresAt time.Time
 }
+
+// maxCacheEntries bounds the cache so distinct query/region/max combinations
+// cannot grow memory without limit. When the cap is reached on insert, expired
+// entries are swept first before the new entry is added.
+const maxCacheEntries = 1024
 
 type researchCache struct {
 	mu      sync.RWMutex
@@ -218,17 +234,40 @@ func (c *researchCache) get(key string) (researchCacheEntry, bool) {
 	entry, ok := c.entries[key]
 	c.mu.RUnlock()
 
-	if !ok || time.Now().After(entry.expiresAt) {
+	if !ok {
+		return researchCacheEntry{}, false
+	}
+	if time.Now().After(entry.expiresAt) {
+		// Reclaim the expired slot so it can't accumulate indefinitely.
+		// Re-check under the write lock in case another goroutine refreshed it.
+		c.mu.Lock()
+		if cur, still := c.entries[key]; still && time.Now().After(cur.expiresAt) {
+			delete(c.entries, key)
+		}
+		c.mu.Unlock()
 		return researchCacheEntry{}, false
 	}
 	return entry, true
 }
 
 func (c *researchCache) set(key string, entry researchCacheEntry, ttl time.Duration) {
-	entry.expiresAt = time.Now().Add(ttl)
+	now := time.Now()
+	entry.expiresAt = now.Add(ttl)
+
 	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Bound growth: if we're at capacity and this is a new key, drop expired
+	// entries to make room before inserting.
+	if _, exists := c.entries[key]; !exists && len(c.entries) >= maxCacheEntries {
+		for k, e := range c.entries {
+			if now.After(e.expiresAt) {
+				delete(c.entries, k)
+			}
+		}
+	}
+
 	c.entries[key] = entry
-	c.mu.Unlock()
 }
 
 // --- middleware ---
@@ -271,4 +310,10 @@ func writeJSON(w http.ResponseWriter, status int, payload any) {
 	if err := json.NewEncoder(w).Encode(payload); err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
+}
+
+// writeError emits a JSON error body with a safe, client-facing message.
+// Underlying errors must be logged separately, never sent to the client.
+func writeError(w http.ResponseWriter, status int, message string) {
+	writeJSON(w, status, map[string]string{"error": message})
 }
