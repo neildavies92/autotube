@@ -1,23 +1,5 @@
-# AutoTube Web
+# Web
 
-React + Vite + TypeScript dashboard shell for the local-first AutoTube MVP.
+React/Vite foundation page. Run `pnpm dev:web` from the root and visit http://127.0.0.1:5173. `/api/*` proxies to the local Fastify API, stripping `/api`.
 
-The dashboard calls the Go API health endpoint through the Vite development proxy:
-
-```bash
-/api/health -> http://127.0.0.1:8080/health
-```
-
-Start the API before the dashboard to see the live `API online` state. If the API is not running, the dashboard shows its API offline state.
-
-Run from the repository root:
-
-```bash
-npm run dev:web
-```
-
-Build from the repository root:
-
-```bash
-npm run build:web
-```
+After `pnpm build`, `pnpm --filter @autotube/web preview` serves built assets on port 4173 (no API proxy). Navigation and API availability states are SWA-48 work; workflow controls and evidence inspection follow later.

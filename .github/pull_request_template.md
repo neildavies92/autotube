@@ -1,25 +1,23 @@
-## Summary
+## Change
 
-- What changed:
-- Why it changed:
+Describe the problem, resulting behaviour and scope.
 
-## Jira
+## Linear
 
 - Issue:
 
 ## Verification
 
-- [ ] Tests/checks run:
-- [ ] Not run, with reason:
+- Exact commands and results:
+- Checks not run and why:
 
-## Documentation
+## Documentation and limits
 
-- [ ] Notion updated where relevant
-- [ ] README updated where relevant
-- [ ] No documentation changes needed
+- Setup/architecture/contract documentation updated:
+- Remaining limitations and next unblocked issue:
 
-## Review Checklist
+## Review
 
-- [ ] Scope matches the linked Jira issue
-- [ ] No secrets or accidental local files included
-- [ ] Branch is ready for squash merge after review
+- [ ] Scope matches the issue's acceptance criteria
+- [ ] No secrets, local files or destructive data changes
+- [ ] Required checks pass

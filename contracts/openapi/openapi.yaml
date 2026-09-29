@@ -5,7 +5,7 @@ info:
   summary: Local-first API contract for the AutoTube dashboard.
 servers:
   - url: http://127.0.0.1:8080
-    description: Local Go API server
+    description: Local Fastify API server
 paths:
   /health:
     get:
@@ -13,7 +13,7 @@ paths:
       operationId: getHealth
       responses:
         "200":
-          description: API is reachable and ready for local dashboard requests.
+          description: API process is reachable; no database or provider readiness is implied.
           content:
             application/json:
               schema:
@@ -37,7 +37,7 @@ components:
             - ok
         message:
           type: string
-          example: AutoTube API is ready for local dashboard requests.
+          example: AutoTube API foundation is running.
         checkedAt:
           type: string
           format: date-time

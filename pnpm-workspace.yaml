@@ -1,0 +1,6 @@
+packages:
+  - apps/*
+
+# Allow only the build helper used by tsx.
+onlyBuiltDependencies:
+  - esbuild
