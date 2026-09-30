@@ -1,0 +1,16 @@
+{
+  "name": "@autotube/api",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "fastify": "5.12.5",
+    "zod": "4.6.5"
+  }
+}

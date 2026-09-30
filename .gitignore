@@ -1,18 +1,9 @@
 .DS_Store
-
-# Environment
 .env
 .env.*
 !.env.example
-
-# Go
-bin/
-coverage.out
-
-# Node
 node_modules/
-npm-debug.log*
-
-# Frontend build output
-apps/web/dist/
-apps/web/coverage/
+dist/
+coverage/
+*.tsbuildinfo
+*.log

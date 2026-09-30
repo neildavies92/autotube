@@ -1,15 +1,5 @@
-# Branch Protection Checklist
+# Branch protection
 
-Configure the `main` branch with these GitHub repository settings before merging project work:
+Configure `main` to require pull requests, an approving review, linear history and the `checks` job from the CI workflow. Dismiss stale reviews and require checks on the current PR revision. Prefer squash merges after review and disable direct pushes to `main`.
 
-- Require a pull request before merging.
-- Require at least one approving review before merge.
-- Dismiss stale approvals when new commits are pushed.
-- Require branches to be up to date before merging once CI exists.
-- Require a linear history.
-- Allow squash merging.
-- Disable merge commits.
-- Disable direct pushes to `main`.
-- Delete head branches automatically after merge.
-
-Until CI exists, required status checks should be added only after the first workflows are in place.
+This is repository administration guidance; SWA-46 adds CI but does not change GitHub protection settings or merge any PR.
