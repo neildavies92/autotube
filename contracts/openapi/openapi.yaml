@@ -1,43 +1,75 @@
 openapi: 3.1.0
 info:
   title: AutoTube API
-  version: 0.1.0
-  summary: Local-first API contract for the AutoTube dashboard.
+  version: 0.2.0
+  summary: Local operational API boundary.
 servers:
   - url: http://127.0.0.1:8080
     description: Local Fastify API server
 paths:
   /health:
     get:
-      summary: Read API health status
+      summary: Read API process liveness
+      description: Unknown query parameters are rejected. No database, worker or provider readiness is implied.
       operationId: getHealth
+      parameters:
+        - in: header
+          name: x-request-id
+          required: false
+          description: Optional UUID correlation metadata; invalid values return 400 with a new generated ID.
+          schema: { type: string, format: uuid }
       responses:
         "200":
-          description: API process is reachable; no database or provider readiness is implied.
+          description: API process is reachable.
+          headers:
+            x-request-id:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "500":
+          $ref: "#/components/responses/Error"
+      x-unknown-routes: Unknown routes and unsupported methods return 404 using ErrorResponse.
 components:
+  headers:
+    RequestId:
+      description: Validated or generated request correlation ID.
+      schema: { type: string, format: uuid }
+  responses:
+    Error:
+      description: Sanitized error; request input and internal exception details are omitted.
+      headers:
+        x-request-id:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
   schemas:
     HealthResponse:
       type: object
-      required:
-        - service
-        - status
-        - message
-        - checkedAt
+      additionalProperties: false
+      required: [service, status, message, checkedAt]
       properties:
-        service:
-          type: string
-          example: autotube-api
-        status:
-          type: string
-          enum:
-            - ok
-        message:
-          type: string
-          example: AutoTube API foundation is running.
-        checkedAt:
-          type: string
-          format: date-time
+        service: { type: string, const: autotube-api }
+        status: { type: string, const: ok }
+        message: { type: string }
+        checkedAt: { type: string, format: date-time }
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message, requestId]
+          properties:
+            code:
+              type: string
+              enum: [INVALID_REQUEST, BAD_REQUEST, NOT_FOUND, INTERNAL_ERROR]
+            message: { type: string }
+            requestId: { type: string, format: uuid }

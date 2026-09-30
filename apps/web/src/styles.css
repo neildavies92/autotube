@@ -1,8 +1,28 @@
-:root { font-family: system-ui, sans-serif; color: #18312e; background: #f4f6f3; line-height: 1.6; }
+:root { font-family: system-ui, sans-serif; color: #18312e; background: #f4f6f3; line-height: 1.6; font-synthesis: none; }
+* { box-sizing: border-box; }
 body { margin: 0; }
-main { max-width: 42rem; margin: 10vh auto; padding: 2rem; }
-h1 { line-height: 1.2; font-size: clamp(2rem, 5vw, 3rem); }
+.workspace { max-width: 72rem; margin: 0 auto; padding: 1.5rem; }
+header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #ccd7d1; padding-bottom: 1rem; }
+header p { color: #4b615c; }
+.brand { color: #18312e; text-decoration: none; font-size: 1.5rem; font-weight: 750; }
+.brand span { color: #4b615c; font-size: 1rem; }
+nav { display: flex; gap: .75rem; padding: 1.5rem 0; }
+button { font: inherit; padding: .6rem 1rem; border: 1px solid #b3c3bb; border-radius: .4rem; background: transparent; color: #18312e; cursor: pointer; }
+button[aria-current=page] { background: #e1eae4; font-weight: 650; }
+button:disabled { opacity: .6; cursor: wait; }
+main { max-width: 48rem; margin: 2rem auto; }
+h1 { line-height: 1.2; font-size: clamp(2rem, 5vw, 3rem); margin-top: .25rem; }
+h2 { margin-top: 0; font-size: 1.2rem; }
 a { color: #146b57; text-underline-offset: .2em; }
-a:focus-visible { outline: 3px solid #146b57; outline-offset: 4px; }
-.eyebrow { font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
-.note { margin-top: 3rem; color: #4b615c; }
+a:focus-visible, button:focus-visible { outline: 3px solid #146b57; outline-offset: 4px; }
+.eyebrow { font-size: .85rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.connection { margin-top: 2rem; background: #fff; border: 1px solid #ccd7d1; padding: 1.5rem; border-radius: .75rem; }
+.status { font-weight: 650; }
+.available { color: #126749; }
+.failed { color: #a12929; }
+.loading { color: #4b615c; }
+.primary { background: #146b57; color: white; border-color: #146b57; }
+.note { color: #4b615c; font-size: .9rem; margin-top: 1.5rem; }
+dl { display: grid; grid-template-columns: 1fr 2fr; gap: .5rem; border-top: 1px solid #ccd7d1; padding-top: 1rem; }
+dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 40rem) { .workspace { padding: 1rem; } header { gap: 1rem; } main { margin-top: 1rem; } }

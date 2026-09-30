@@ -12,6 +12,8 @@ Build incrementally: the first MVP ends at a ranked, evidence-backed topic backl
 - Fastify in `apps/api`, React/Vite in `apps/web`, a separate Node process in `apps/worker`.
 - Keep modules within their app until there is an actual shared consumer. Do not import another app's internals.
 - Use Zod at external/environment/HTTP/job boundaries when introduced. Keep startup separate from app construction for tests.
+- Preserve the API error envelope and UUID request correlation. Log allowlisted metadata only; never log raw exception messages, request URLs with queries, headers or bodies. Add explicit redaction tests with synthetic sentinel secrets.
+- Web availability is a runtime-validated, bounded request with loading/failure/retry states; it describes process liveness only. Keep navigation focused on available operational controls.
 - Node apps use ESM and `.js` specifiers for relative imports; TypeScript compiles to `dist`. Web uses Vite/bundler resolution.
 - PostgreSQL/Drizzle lives in `packages/database`; Graphile Worker arrives in SWA-49. No Redis or speculative downstream tables.
 - React is for controls and evidence inspection; Grafana reporting and Remotion/FFmpeg are later work.
