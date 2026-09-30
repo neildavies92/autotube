@@ -6,9 +6,9 @@ This repository currently provides the **development foundation only** (SWA-46).
 
 ## Architecture
 
-- `apps/api`: Fastify process with a credential-free `GET /health` endpoint and Zod-validated startup settings.
+- `apps/api`: Fastify health boundary with Zod validation, consistent errors, request correlation IDs and sanitized structured logs.
 - `apps/worker`: separate, idle Node process; no jobs or polling yet.
-- `apps/web`: React/Vite foundation page, with a development proxy to the API.
+- `apps/web`: React/Vite operational navigation and API availability checks, with loading, failure and retry states.
 - Strict TypeScript, pnpm, ESLint and Vitest across one workspace. Shared packages are added only when multiple consumers need them; none are needed yet.
 
 PostgreSQL/Drizzle comes in SWA-47, the API/operational UI in SWA-48, and Graphile Worker in SWA-49. Remotion/FFmpeg belongs to video production. Grafana is deferred to performance reporting; the React app will focus on workflow controls and evidence inspection.
@@ -35,7 +35,15 @@ pnpm dev:worker
 pnpm dev:web
 ```
 
-The web development server forwards `/api/*` to `http://127.0.0.1:8080/*`, removing `/api`. The page's health link therefore requests `/api/health`. Ports are strict: startup fails if occupied. Optional shell variables `AUTOTUBE_HOST` and `AUTOTUBE_PORT` override the API bind address only; `.env.example` documents defaults and files are not loaded automatically. If changing the API port, update the development proxy target in `apps/web/vite.config.ts` too. Only bind beyond loopback deliberately; authentication is not implemented.
+The web development server forwards `/api/*` to `http://127.0.0.1:8080/*`, removing `/api`. The operational shell requests `/api/health` and validates the response before reporting availability. Ports are strict: startup fails if occupied. Optional shell variables `AUTOTUBE_HOST` and `AUTOTUBE_PORT` override the API bind address only; `.env.example` documents defaults and files are not loaded automatically. If changing the API port, update the development proxy target in `apps/web/vite.config.ts` too. Only bind beyond loopback deliberately; authentication is not implemented.
+
+## API and operational shell
+
+The shell provides Overview and API connection views. It checks API availability on mount and on demand, with a five-second timeout, loading state and retry after failure. Availability describes the last successful check of the API process; it does not imply database, worker or provider readiness. Workflow controls are introduced with their owning issues.
+
+`GET /health` returns the retained health response and `x-request-id`. Callers may supply a UUID `x-request-id`; invalid IDs and unexpected health query parameters receive a consistent error envelope. Unknown routes and internal errors use the same envelope without exposing raw exceptions or request values. Logs record correlation, status and duration with sensitive data omitted/redacted. Optional `AUTOTUBE_LOG_LEVEL` configures logging; startup configuration errors expose field names only.
+
+See [API/UI behaviour and verification](docs/swa-48-api-ui.md) for the full contract, shutdown and tests. API settings are shell environment variables, not automatically loaded from `.env`.
 
 ## Verification
 
@@ -66,7 +74,7 @@ pnpm --filter @autotube/worker start
 pnpm --filter @autotube/web preview
 ```
 
-Vite preview serves the built web at http://127.0.0.1:4173 and is a local asset preview, not a production deployment. The `/api` proxy is development-only.
+Vite preview serves the built web at http://127.0.0.1:4173 and is a local asset preview, not a production deployment. Development and preview share the `/api` proxy to the local API.
 
 ## Contributing
 
