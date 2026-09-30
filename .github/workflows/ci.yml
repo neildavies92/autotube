@@ -12,6 +12,20 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.11-alpine
+        env:
+          POSTGRES_USER: autotube_test
+          POSTGRES_PASSWORD: autotube_test
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U autotube_test -d postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -21,3 +35,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+      - run: pnpm test:integration
+        env:
+          TEST_DATABASE_ADMIN_URL: postgresql://autotube_test:autotube_test@127.0.0.1:5432/postgres

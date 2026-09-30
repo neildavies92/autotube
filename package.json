@@ -18,7 +18,14 @@
     "test": "vitest run",
     "build": "pnpm -r build",
     "smoke": "node scripts/smoke.mjs",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm smoke"
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm smoke",
+    "db:up": "docker compose --env-file .env -f infra/compose.yaml up -d --wait",
+    "db:down": "docker compose --env-file .env -f infra/compose.yaml down",
+    "db:migrate": "pnpm --filter @autotube/database migrate",
+    "db:generate": "pnpm --filter @autotube/database generate",
+    "db:test:up": "docker compose -f infra/compose.test.yaml up -d --wait",
+    "db:test:down": "docker compose -f infra/compose.test.yaml down",
+    "test:integration": "pnpm --filter @autotube/database test:integration"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

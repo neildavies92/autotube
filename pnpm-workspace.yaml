@@ -1,5 +1,6 @@
 packages:
   - apps/*
+  - packages/*
 
 # Allow only the build helper used by tsx.
 onlyBuiltDependencies:

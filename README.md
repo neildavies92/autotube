@@ -2,16 +2,17 @@
 
 AutoTube will discover evidence-backed evergreen YouTube opportunities, maintain a ranked topic backlog, produce original videos, publish on a controlled schedule and learn from performance. The first MVP ends at an inspectable topic backlog.
 
-This repository currently provides the **development foundation only** (SWA-46).
+This repository provides the **development and persistence foundations**. Domain workflows are not implemented.
 
 ## Architecture
 
 - `apps/api`: Fastify process with a credential-free `GET /health` endpoint and Zod-validated startup settings.
 - `apps/worker`: separate, idle Node process; no jobs or polling yet.
 - `apps/web`: React/Vite foundation page, with a development proxy to the API.
-- Strict TypeScript, pnpm, ESLint and Vitest across one workspace. Shared packages are added only when multiple consumers need them; none are needed yet.
+- `packages/database`: typed Drizzle connection and migration tooling; no application/domain tables yet.
+- Strict TypeScript, pnpm, ESLint and Vitest across one workspace. Keep shared modules bounded to actual infrastructure needs.
 
-PostgreSQL/Drizzle comes in SWA-47, the API/operational UI in SWA-48, and Graphile Worker in SWA-49. Remotion/FFmpeg belongs to video production. Grafana is deferred to performance reporting; the React app will focus on workflow controls and evidence inspection.
+PostgreSQL/Drizzle is provided by SWA-47. The API/operational UI is tracked in SWA-48, and Graphile Worker in SWA-49. Remotion/FFmpeg belongs to video production. Grafana is deferred to performance reporting; the React app will focus on workflow controls and evidence inspection.
 
 ## Local setup
 
@@ -67,6 +68,28 @@ pnpm --filter @autotube/web preview
 ```
 
 Vite preview serves the built web at http://127.0.0.1:4173 and is a local asset preview, not a production deployment. The `/api` proxy is development-only.
+
+## Local PostgreSQL
+
+Docker Compose provides a PostgreSQL 17.11 instance on loopback port 55432, with a persistent v2 volume and healthcheck. The API health endpoint remains independent of the database. To configure and migrate the local database:
+
+```sh
+cp .env.example .env # only if .env does not already exist
+pnpm db:up
+pnpm db:migrate
+```
+
+`pnpm db:down` stops the development service without removing its volume. `pnpm db:generate` generates future Drizzle migrations for review; never rewrite an applied migration. No general reset command is provided. The initial migration creates an application schema and Drizzle's migration history, with no speculative product tables.
+
+Use a separate ephemeral PostgreSQL instance for integration tests:
+
+```sh
+pnpm db:test:up
+TEST_DATABASE_ADMIN_URL=postgresql://autotube_test:autotube_test@127.0.0.1:55433/postgres pnpm test:integration
+pnpm db:test:down
+```
+
+Every test run creates a new uniquely named test database and drops only the database it created. Rerunning the test command is the reset-for-tests workflow; it never falls back to `DATABASE_URL`. CI runs these same integration tests against its own PostgreSQL service. See [database setup and safety boundaries](docs/swa-47-postgres.md) for exact configuration, migration and isolated-test behaviour.
 
 ## Contributing
 

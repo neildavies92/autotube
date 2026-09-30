@@ -13,7 +13,7 @@ Build incrementally: the first MVP ends at a ranked, evidence-backed topic backl
 - Keep modules within their app until there is an actual shared consumer. Do not import another app's internals.
 - Use Zod at external/environment/HTTP/job boundaries when introduced. Keep startup separate from app construction for tests.
 - Node apps use ESM and `.js` specifiers for relative imports; TypeScript compiles to `dist`. Web uses Vite/bundler resolution.
-- PostgreSQL/Drizzle and Graphile Worker arrive in later foundation issues. No Redis or speculative downstream tables.
+- PostgreSQL/Drizzle lives in `packages/database`; Graphile Worker arrives in SWA-49. No Redis or speculative downstream tables.
 - React is for controls and evidence inspection; Grafana reporting and Remotion/FFmpeg are later work.
 - Never log credentials or make live paid/provider calls in tests or CI. Use synthetic fixtures and local test doubles. Capture timestamps, correlation, durations, usage and currency-aware costs as the relevant operations are introduced; unknown cost is not zero.
 - For future jobs, test failures and retries, preserve idempotency, reconcile external side effects and add spending/publishing limits before unattended operations.
@@ -39,7 +39,7 @@ pnpm build
 pnpm smoke
 ```
 
-Keep ports 8080, 5173 and 4173 free for smoke checks. Add meaningful tests at changed boundaries; do not inflate counts with constants or implementation-mirroring assertions. No database or secrets are required for this foundation.
+Keep ports 8080, 5173 and 4173 free for smoke checks. Add meaningful tests at changed boundaries; do not inflate counts with constants or implementation-mirroring assertions. Unit/process checks need no database or provider secrets. Persistence changes also require `pnpm test:integration` against the dedicated local test instance; see `docs/swa-47-postgres.md`. Never substitute the development `DATABASE_URL` for `TEST_DATABASE_ADMIN_URL`.
 
 ## Issue-sized delivery
 
@@ -51,3 +51,10 @@ Keep ports 8080, 5173 and 4173 free for smoke checks. Add meaningful tests at ch
 6. Do not merge, deploy, force-push, delete existing data or rewrite shared history without explicit authorization. Database resets must target isolated test data or be explicitly requested.
 
 The v1 baseline is recorded in `docs/swa-46-migration.md`. Retired SQL and Compose files are historical; do not run them against existing data as part of v2 setup.
+
+## Database changes
+
+- `pnpm db:up` / `pnpm db:down` manage the persistent local v2 instance. Stop without removing volumes.
+- `pnpm db:migrate` applies committed migrations; `pnpm db:generate` creates reviewable migrations from the Drizzle schema. Do not mutate applied migration files.
+- `pnpm db:test:up`, then `TEST_DATABASE_ADMIN_URL=postgresql://autotube_test:autotube_test@127.0.0.1:55433/postgres pnpm test:integration`, then `pnpm db:test:down` runs isolated persistence checks. Each test run owns a freshly created database; reset means rerun, never resetting the development database.
+- Keep API liveness independent of PostgreSQL. Add application tables only with their owning issue; SWA-49 introduces run/attempt records.
